@@ -27,7 +27,7 @@ describe('judges router endpoints', () => {
 
   describe('GET /judges/:name', () => {
     it('should return 200 when judge found', async () => {
-      Judges.findFullDataByName.mockResolvedValue({
+      Judges.findFullDataById.mockResolvedValue({
         name: 'Test001 User',
         judge_county: 'Georgia',
         judge_image: 'www.google.com',
@@ -36,11 +36,11 @@ describe('judges router endpoints', () => {
       const res = await request(server).get('/judges/Test001%20User');
       expect(res.status).toBe(200);
       expect(res.body.name).toBe('Test001 User');
-      expect(Judges.findFullDataByName.mock.calls.length).toBe(0);
+      expect(Judges.findFullDataById.mock.calls.length).toBe(0);
     });
 
     it('should return 404 when no user found', async () => {
-      Judges.findFullDataByName.mockResolvedValue();
+      Judges.findFullDataById.mockResolvedValue();
       const res = await request(server).get('/judges/BobSmith');
 
       expect(res.status).toBe(404);
