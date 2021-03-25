@@ -4,8 +4,8 @@ const Case = require('../cases/caseModel');
 // * Middleware for Judge & Case
 
 const verifyJudge = (req, res, next) => {
-  const name = String(req.params.name);
-  Judge.findByName(name)
+  const judge_name = String(req.params.judge_name);
+  Judge.findById(judge_name)
     .then(() => {
       next();
     })
