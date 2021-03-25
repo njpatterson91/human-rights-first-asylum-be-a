@@ -6,38 +6,26 @@ const add = async (data) => {
   return db('judges').insert(data);
 };
 
-const findAllSimple = async () => {
-  return await db('judges');
-};
-
 const findAll = async () => {
-  const db_judges = await db('judges').select('name');
-
-  let judges = [];
-  for (let i = 0; i < db_judges.length; i++) {
-    const judge = await findFullDataByName(Object.values(db_judges[i])[0]);
-    judges.push(judge);
-  }
-
-  return judges;
+  return await db('judges').select('judges.*');
 };
 
-const findByName = async (name) => {
-  return await db('judges').where({ name });
+const findById = async (judge_id) => {
+  return await db('judges').where({ judge_id }).first();
 };
 
 // * This call takes awhile because of the sheer amount of datajoins
 // * Would be great to streamline this in the future
-const findFullDataByName = async (name) => {
-  const judge = await findByName(name);
-  const countries = await countryData(name);
-  const cases = await caseData(name);
-  const secondary = await secondaryData(name);
+const findFullDataById = async (judge_id) => {
+  const judge = await findById(judge_id);
+  const countries = await countryData(judge_id);
+  const cases = await caseData(judge_id);
+  const secondary = await secondaryData(judge_id);
   const positives = await db('positive_join')
-    .where({ judge_name: name })
+    .where({ judge_id: judge_id })
     .select('positive_word');
   const negatives = await db('negative_join')
-    .where({ judge_name: name })
+    .where({ judge_id: judge_id })
     .select('negative_word');
 
   let positive_keywords = [];
@@ -66,14 +54,14 @@ const findFullDataByName = async (name) => {
   return judge[0];
 };
 
-const caseData = async (judge_name) => {
-  return db('cases').where({ judge_name }).select('*');
+const caseData = async (judge_id) => {
+  return db('cases').where({ judge_id }).select('*');
 };
 
-const countryData = async (judge_name) => {
+const countryData = async (judge_id) => {
   // * search cases db by judge name & return refugee origin and decision
   return db('cases')
-    .where({ judge_name })
+    .where({ judge_id })
     .select('refugee_origin', 'judge_decision')
     .then((countries) => {
       // * if there are any countries, create a dictionary of dictionaries
@@ -134,9 +122,9 @@ const countryData = async (judge_name) => {
 };
 
 let grounds_data = [];
-const secondaryData = async (judge_name) => {
+const secondaryData = async (judge_id) => {
   // * search cases db by judge name & return case_id
-  const case_ids = await db('cases').where({ judge_name }).select('id');
+  const case_ids = await db('cases').where({ judge_id }).select('id');
 
   let socialDict = {};
   let groundsDict = {};
@@ -220,13 +208,13 @@ const secondaryData = async (judge_name) => {
   return [social_data, grounds_data];
 };
 
-const update = async (name, data) => {
-  return db('judges').where({ name }).first().update(data);
+const update = async (judge_id, data) => {
+  return db('judges').where({ judge_id }).first().update(data);
 };
 
-const writeCSV = async (name) => {
+const writeCSV = async (judge_id) => {
   // * get judge data
-  const judge_data = await findByName(name);
+  const judge_data = await findById(judge_id);
 
   // * create fields
   const judge_fields = [];
@@ -236,8 +224,8 @@ const writeCSV = async (name) => {
   const judge_opts = { fields: judge_fields };
 
   // * get country data
-  const country_data = await countryData(name);
-  const secondary_data = await secondaryData(name);
+  const country_data = await countryData(judge_id);
+  const secondary_data = await secondaryData(judge_id);
 
   // * create social fields
   const social_fields = [];
@@ -272,7 +260,7 @@ const writeCSV = async (name) => {
   };
 
   // * get case data
-  const case_data = await caseData(name);
+  const case_data = await caseData(judge_id);
 
   // * create case fields
   const case_fields = [];
@@ -305,9 +293,8 @@ const writeCSV = async (name) => {
 module.exports = {
   add,
   findAll,
-  findByName,
-  findAllSimple,
-  findFullDataByName,
+  findById,
+  findFullDataById,
   update,
   writeCSV,
 };
